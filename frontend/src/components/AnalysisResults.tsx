@@ -118,26 +118,74 @@ export function AnalysisResults({ report, competitorDiscovery }: AnalysisResults
           onToggle={() => toggleSection("competitor")}
         >
           <div className="space-y-6">
-            {/* Competitor Match Summary */}
-            <div className="flex items-start gap-4 p-4 glass rounded-xl">
-              <div className="w-12 h-12 rounded-xl bg-electric-500/20 flex items-center justify-center flex-shrink-0">
-                <Target className="w-6 h-6 text-electric-400" />
+            {/* Side-by-side Product Cards */}
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Your Product */}
+              <div className="glass rounded-xl p-5 border border-ember-500/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="w-2 h-2 rounded-full bg-ember-500" />
+                  <span className="text-xs font-medium text-cream-100/60 uppercase tracking-wide">Your Product</span>
+                </div>
+                <h4 className="text-lg font-semibold text-cream-50 mb-1">
+                  {competitorDiscovery.source_product_name}
+                </h4>
+                <p className="text-ember-400 font-medium text-sm mb-4">
+                  {competitorDiscovery.source_brand}
+                </p>
+                {competitorDiscovery.source_price && (
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <span className="text-2xl font-bold text-cream-50">{competitorDiscovery.source_price}</span>
+                  </div>
+                )}
+                <div className="pt-3 border-t border-cream-100/10">
+                  <span className="inline-block px-3 py-1 text-xs font-medium bg-cream-100/5 text-cream-100/50 rounded-full">
+                    {competitorDiscovery.source_category}
+                  </span>
+                </div>
               </div>
-              <div>
-                <p className="text-cream-100/60 text-sm mb-1">Best-in-class competitor for</p>
-                <p className="text-cream-50 font-semibold text-lg">
-                  {competitorDiscovery.source_category}
-                </p>
-                <p className="text-cream-100/50 text-sm mt-2">
-                  We identified <span className="text-electric-400 font-medium">{competitorDiscovery.competitor_brand}</span> as 
-                  the leading brand to benchmark against in your space.
-                </p>
+
+              {/* Competitor Product */}
+              <div className="glass rounded-xl p-5 border border-electric-500/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-electric-500/5 rounded-full blur-2xl -mr-16 -mt-16" />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-electric-500" />
+                      <span className="text-xs font-medium text-cream-100/60 uppercase tracking-wide">Benchmark</span>
+                    </div>
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-electric-500/20 text-electric-400 rounded-full">
+                      Best-in-class
+                    </span>
+                  </div>
+                  <h4 className="text-lg font-semibold text-cream-50 mb-1">
+                    {competitorDiscovery.competitor_product_name}
+                  </h4>
+                  <p className="text-electric-400 font-medium text-sm mb-4">
+                    {competitorDiscovery.competitor_brand}
+                  </p>
+                  {competitorDiscovery.competitor_price && (
+                    <div className="flex items-baseline gap-2 mb-4">
+                      <span className="text-2xl font-bold text-cream-50">{competitorDiscovery.competitor_price}</span>
+                    </div>
+                  )}
+                  <a
+                    href={competitorDiscovery.competitor_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-electric-500/20 hover:bg-electric-500/30 
+                             text-electric-400 font-medium text-sm rounded-lg transition-all duration-200
+                             border border-electric-500/30 hover:border-electric-500/50"
+                  >
+                    View PDP <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
               </div>
             </div>
 
-            {/* Reasons */}
+            {/* Why This Brand */}
             <div>
-              <h4 className="text-sm font-medium text-cream-100/60 uppercase tracking-wide mb-3">
+              <h4 className="text-sm font-medium text-cream-100/60 uppercase tracking-wide mb-3 flex items-center gap-2">
+                <Target className="w-4 h-4 text-electric-400" />
                 Why {competitorDiscovery.competitor_brand}?
               </h4>
               <div className="space-y-3">
@@ -147,8 +195,8 @@ export function AnalysisResults({ report, competitorDiscovery }: AnalysisResults
                       <Lightbulb className="w-3.5 h-3.5 text-electric-400" />
                     </div>
                     <div>
-                      <p className="text-cream-50 font-medium">{reason.reason}</p>
-                      <p className="text-cream-100/60 text-sm mt-1">{reason.detail}</p>
+                      <p className="text-cream-50 font-medium">{parseMarkdownLinks(reason.reason)}</p>
+                      <p className="text-cream-100/60 text-sm mt-1">{parseMarkdownLinks(reason.detail)}</p>
                     </div>
                   </div>
                 ))}
@@ -185,9 +233,12 @@ export function AnalysisResults({ report, competitorDiscovery }: AnalysisResults
               href={report.source_pdp.url} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-sm text-cream-100/40 hover:text-ember-400 transition-colors flex items-center justify-center gap-1 mt-1"
+              className="inline-flex items-center gap-2 px-4 py-2 mt-3
+                       bg-ember-500/10 hover:bg-ember-500/20 
+                       text-ember-400 font-medium text-sm rounded-lg transition-all duration-200
+                       border border-ember-500/20 hover:border-ember-500/40"
             >
-              View page <ExternalLink className="w-3 h-3" />
+              View PDP <ExternalLink className="w-4 h-4" />
             </a>
           </div>
 
@@ -231,9 +282,12 @@ export function AnalysisResults({ report, competitorDiscovery }: AnalysisResults
               href={report.reference_pdp.url} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-sm text-cream-100/40 hover:text-electric-400 transition-colors flex items-center justify-center gap-1 mt-1"
+              className="inline-flex items-center gap-2 px-4 py-2 mt-3
+                       bg-electric-500/10 hover:bg-electric-500/20 
+                       text-electric-400 font-medium text-sm rounded-lg transition-all duration-200
+                       border border-electric-500/20 hover:border-electric-500/40"
             >
-              View page <ExternalLink className="w-3 h-3" />
+              View PDP <ExternalLink className="w-4 h-4" />
             </a>
           </div>
         </div>
@@ -246,7 +300,7 @@ export function AnalysisResults({ report, competitorDiscovery }: AnalysisResults
         onToggle={() => toggleSection("summary")}
       >
         <p className="text-cream-100/80 leading-relaxed whitespace-pre-line">
-          {report.executive_summary}
+          {parseMarkdownLinks(report.executive_summary)}
         </p>
       </CollapsibleSection>
 
@@ -293,7 +347,7 @@ export function AnalysisResults({ report, competitorDiscovery }: AnalysisResults
                 />
                 
                 <p className="text-sm text-cream-100/60 mt-4">
-                  {comparison.gap_analysis}
+                  {parseMarkdownLinks(comparison.gap_analysis)}
                 </p>
               </div>
             );
@@ -433,7 +487,7 @@ function RecommendationCard({ recommendation, index }: RecommendationCardProps) 
         <div className="px-4 pb-4 pl-16 space-y-3">
           <div>
             <span className="text-xs font-medium text-cream-100/40 uppercase tracking-wide">Why it matters</span>
-            <p className="text-sm text-cream-100/70 mt-1">{recommendation.rationale}</p>
+            <p className="text-sm text-cream-100/70 mt-1">{parseMarkdownLinks(recommendation.rationale)}</p>
           </div>
           
           <div className="flex gap-8">

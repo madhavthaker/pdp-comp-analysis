@@ -12,9 +12,12 @@ export interface CompetitorFinderResponse {
   source_product_name: string;
   source_brand: string;
   source_category: string;
+  source_price: string | null;
   competitor_url: string;
   competitor_product_name: string;
   competitor_brand: string;
+  competitor_image_url: string | null;
+  competitor_price: string | null;
   reasons: CompetitorReason[];
   other_competitors_considered: string[];
 }

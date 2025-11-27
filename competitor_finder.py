@@ -38,11 +38,14 @@ class CompetitorFinderResponse(BaseModel):
     source_product_name: str = Field(description="Name of the source product")
     source_brand: str = Field(description="Brand of the source product")
     source_category: str = Field(description="Product category")
+    source_price: Optional[str] = Field(default=None, description="Price of the source product, simple format like '$95.00' or '$120.00 USD'")
     
     # Competitor output (main result)
     competitor_url: str = Field(description="The full URL to the competitor's product page")
     competitor_product_name: str = Field(description="Name of the competitor product")
     competitor_brand: str = Field(description="Brand of the competitor product")
+    competitor_image_url: Optional[str] = Field(default=None, description="URL of the main product image from the competitor's page")
+    competitor_price: Optional[str] = Field(default=None, description="Price of the competitor product, simple format like '$95.00' or '$120.00 USD'")
     
     # Reasoning
     reasons: list[CompetitorReason] = Field(

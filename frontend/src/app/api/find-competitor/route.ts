@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const maxDuration = 120; // 2 minutes for finding competitor
+export const maxDuration = 180; // 3 minutes for finding competitor
 export const dynamic = "force-dynamic";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
+    const timeoutId = setTimeout(() => controller.abort(), 180000);
 
     const response = await fetch(`${BACKEND_URL}/find-competitor`, {
       method: "POST",
