@@ -55,7 +55,7 @@ class ProductCategoryResponse(BaseModel):
     """Step 2: Product category extraction."""
     source_product_name: str = Field(description="Name of the source product")
     source_brand: str = Field(description="Brand of the source product")
-    source_price: Optional[str] = Field(default=None, description="Price of the source product if visible")
+    source_price: Optional[str] = Field(default=None, description="Price in simple format like '$64' or '$129' - just the number")
     category: str = Field(description="Short product category description (e.g. 'Wireless mechanical keyboard')")
 
 
@@ -65,7 +65,7 @@ class CompetitorFinderResponse(BaseModel):
     source_product_name: str = Field(description="Name of the source product")
     source_brand: str = Field(description="Brand of the source product")
     source_category: str = Field(description="Product category")
-    source_price: Optional[str] = Field(default=None, description="Price of the source product")
+    source_price: Optional[str] = Field(default=None, description="Price in simple format like '$64'")
     
     # Competitor output
     competitor_url: str = Field(description="The full URL to the competitor's product page")
