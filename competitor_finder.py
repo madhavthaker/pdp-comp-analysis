@@ -3,11 +3,10 @@
 Competitor Finder Tool
 
 A standalone script that takes a single PDP URL and finds the top 
-competitor product using OpenAI's gpt-5-search-api model with structured outputs.
+competitor product using OpenAI's gpt-5.1 model with web search.
 """
 
 import argparse
-import json
 import os
 import sys
 from pathlib import Path
@@ -23,6 +22,19 @@ load_dotenv()
 
 
 # ============================================================================
+# Prompt Loading
+# ============================================================================
+
+PROMPTS_DIR = Path(__file__).parent / "prompts"
+
+def load_prompt(template_name: str, **kwargs) -> str:
+    """Load and render a Jinja2 template from the prompts directory."""
+    env = Environment(loader=FileSystemLoader(PROMPTS_DIR), trim_blocks=True, lstrip_blocks=True)
+    template = env.get_template(template_name)
+    return template.render(**kwargs)
+
+
+# ============================================================================
 # Pydantic Models for Structured Output
 # ============================================================================
 
@@ -32,89 +44,183 @@ class CompetitorReason(BaseModel):
     detail: str = Field(description="Supporting detail or evidence for this reason")
 
 
+class CompetitorBrandResponse(BaseModel):
+    """Step 1: Competitor brand selection."""
+    competitor_brand: str = Field(description="Name of the best-in-class competitor brand")
+    reasons: list[CompetitorReason] = Field(description="3-5 specific reasons why this brand is the best competitor")
+    other_competitors_considered: list[str] = Field(description="2-3 other brands that were considered but not chosen")
+
+
+class ProductCategoryResponse(BaseModel):
+    """Step 2: Product category extraction."""
+    source_product_name: str = Field(description="Name of the source product")
+    source_brand: str = Field(description="Brand of the source product")
+    source_price: Optional[str] = Field(default=None, description="Price of the source product if visible")
+    category: str = Field(description="Short product category description (e.g. 'Wireless mechanical keyboard')")
+
+
 class CompetitorFinderResponse(BaseModel):
-    """Simplified response - competitor URL + reasoning for piping to pdp_analyzer."""
+    """Final response combining all steps."""
     # Source context
     source_product_name: str = Field(description="Name of the source product")
     source_brand: str = Field(description="Brand of the source product")
     source_category: str = Field(description="Product category")
-    source_price: Optional[str] = Field(default=None, description="Price of the source product, simple format like '$95.00' or '$120.00 USD'")
+    source_price: Optional[str] = Field(default=None, description="Price of the source product")
     
-    # Competitor output (main result)
+    # Competitor output
     competitor_url: str = Field(description="The full URL to the competitor's product page")
-    competitor_product_name: str = Field(description="Name of the competitor product")
+    competitor_product_name: str = Field(description="Name of the competitor product (from page title)")
     competitor_brand: str = Field(description="Brand of the competitor product")
-    competitor_image_url: Optional[str] = Field(default=None, description="URL of the main product image from the competitor's page")
-    competitor_price: Optional[str] = Field(default=None, description="Price of the competitor product, simple format like '$95.00' or '$120.00 USD'")
     
     # Reasoning
-    reasons: list[CompetitorReason] = Field(
-        description="3-5 specific reasons why this competitor is the best benchmark"
-    )
-    
-    # Alternatives considered
-    other_competitors_considered: list[str] = Field(
-        description="2-3 other competitor products/brands that were considered but not chosen"
-    )
+    reasons: list[CompetitorReason] = Field(description="Reasons why this competitor is the best benchmark")
+    other_competitors_considered: list[str] = Field(description="Other brands that were considered")
 
 
 # ============================================================================
-# Prompt Loading
+# OpenAI Integration - 3-Step Flow
 # ============================================================================
 
-PROMPTS_DIR = Path(__file__).parent / "prompts"
-
-
-def load_prompt_template(template_name: str = "competitor_finder.j2"):
-    """Load and return a Jinja2 template from the prompts directory."""
-    env = Environment(
-        loader=FileSystemLoader(PROMPTS_DIR),
-        trim_blocks=True,
-        lstrip_blocks=True
-    )
-    return env.get_template(template_name)
-
-
-# ============================================================================
-# OpenAI Integration
-# ============================================================================
-
-def find_competitor(source_url: str, api_key: Optional[str] = None) -> CompetitorFinderResponse:
+def find_competitor(source_url: str, api_key: Optional[str] = None, verbose: bool = False) -> CompetitorFinderResponse:
     """
-    Analyze a PDP and find the top competitor product.
+    Analyze a PDP and find the top competitor product using a 3-step flow.
+    
+    Steps:
+        1. Find best-in-class competitor brand (structured output)
+        2. Extract product category (structured output)
+        3. Find competitor product URL (web search with url_citation)
     
     Args:
         source_url: URL of the PDP to analyze
-        api_key: OpenAI API key (optional, will use OPENAI_API_KEY env var if not provided)
+        api_key: OpenAI API key (optional)
+        verbose: Print progress to stderr
     
     Returns:
-        CompetitorFinderResponse with source product info and competitor details
+        CompetitorFinderResponse with competitor details
     """
-    # Initialize OpenAI client
     client = OpenAI(api_key=api_key) if api_key else OpenAI()
     
-    # Load and render the prompt template
-    template = load_prompt_template()
-    prompt = template.render(source_url=source_url)
+    # Step 1: Find best-in-class competitor brand with reasons
+    if verbose:
+        print("Step 1/3: Finding best-in-class competitor brand...", file=sys.stderr)
     
-    # Make the API call with structured output
-    response = client.beta.chat.completions.parse(
-        model="gpt-5-search-api",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an expert e-commerce competitive intelligence analyst. Always provide accurate, real competitor URLs that are currently accessible."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        response_format=CompetitorFinderResponse
+    brand_resp = client.responses.parse(
+        model="gpt-5.1",
+        input=load_prompt("find_competitor_brand.j2", source_url=source_url),
+        tools=[{"type": "web_search"}],
+        text_format=CompetitorBrandResponse,
+    )
+    brand_data = brand_resp.output_parsed
+    if verbose:
+        print(f"   → Competitor brand: {brand_data.competitor_brand}", file=sys.stderr)
+        print(f"   → Reasons: {len(brand_data.reasons)}", file=sys.stderr)
+    
+    # Step 2: Extract product category
+    if verbose:
+        print("Step 2/3: Extracting product category...", file=sys.stderr)
+    
+    category_resp = client.responses.parse(
+        model="gpt-5.1",
+        input=load_prompt("extract_product_category.j2", source_url=source_url),
+        tools=[{"type": "web_search"}],
+        text_format=ProductCategoryResponse,
+    )
+    category_data = category_resp.output_parsed
+    if verbose:
+        print(f"   → Source: {category_data.source_product_name} ({category_data.source_brand})", file=sys.stderr)
+        print(f"   → Category: {category_data.category}", file=sys.stderr)
+    
+    # Step 3: Find competitor product URL via web search
+    if verbose:
+        print("Step 3/3: Finding competitor product URL...", file=sys.stderr)
+    
+    brand = brand_data.competitor_brand
+    category = category_data.category
+    
+    url_resp = client.responses.create(
+        model="gpt-5.1",
+        tools=[{"type": "web_search"}],
+        include=["web_search_call.results"],
+        input=load_prompt("find_competitor_url.j2", brand=brand, category=category),
     )
     
-    # Extract and return the parsed response
-    return response.choices[0].message.parsed
+    # Extract URL and title from citations
+    competitor_url, competitor_product_name = _extract_url_from_citations(url_resp, brand)
+    if verbose:
+        print(f"   → Competitor: {competitor_product_name}", file=sys.stderr)
+        print(f"   → Competitor URL: {competitor_url}", file=sys.stderr)
+    
+    # Build final response
+    return CompetitorFinderResponse(
+        source_product_name=category_data.source_product_name,
+        source_brand=category_data.source_brand,
+        source_category=category_data.category,
+        source_price=category_data.source_price,
+        competitor_url=competitor_url,
+        competitor_product_name=competitor_product_name,
+        competitor_brand=brand_data.competitor_brand,
+        reasons=brand_data.reasons,
+        other_competitors_considered=brand_data.other_competitors_considered,
+    )
+
+
+def _extract_url_from_citations(response, brand_hint: str) -> tuple[str, str]:
+    """Extract the best product URL and title from response citations.
+    
+    Returns:
+        Tuple of (url, title)
+    """
+    # Collect all url_citation annotations with url and title
+    all_citations = []
+    for item in response.output:
+        if hasattr(item, 'content'):
+            for content in item.content:
+                if hasattr(content, 'annotations'):
+                    for annotation in content.annotations:
+                        if annotation.type == 'url_citation':
+                            all_citations.append({
+                                'url': annotation.url,
+                                'title': getattr(annotation, 'title', '') or ''
+                            })
+    
+    if not all_citations:
+        # Last resort: extract from text
+        import re
+        text = response.output_text
+        urls = re.findall(r'https?://[^\s<>"{}|\\^`\[\]]+', text)
+        all_citations = [{'url': url, 'title': ''} for url in urls]
+    
+    if not all_citations:
+        return ("URL not found", "Unknown Product")
+    
+    # Score citations to find the best product page
+    def score_citation(citation: dict) -> int:
+        url = citation['url']
+        score = 0
+        url_lower = url.lower()
+        
+        # Prefer product pages
+        if '/products/' in url_lower or '/product/' in url_lower:
+            score += 100
+        
+        # Penalize non-product pages
+        if '/blogs/' in url_lower or '/blog/' in url_lower:
+            score -= 50
+        if '/collections/' in url_lower or '/collection/' in url_lower:
+            score -= 30
+        if '/pages/' in url_lower:
+            score -= 20
+        
+        # Prefer URLs matching the brand
+        brand_clean = brand_hint.lower().replace(' ', '')
+        if brand_clean in url_lower:
+            score += 10
+        
+        return score
+    
+    # Get the highest scoring citation
+    best = max(all_citations, key=score_citation)
+    return (best['url'], best['title'])
 
 
 # ============================================================================
@@ -153,6 +259,12 @@ Environment Variables:
         default=None
     )
     
+    parser.add_argument(
+        "-v", "--verbose",
+        help="Print progress to stderr",
+        action="store_true"
+    )
+    
     args = parser.parse_args()
     
     # Validate API key availability
@@ -172,7 +284,7 @@ Environment Variables:
         print(f"This may take a moment...\n", file=sys.stderr)
         
         # Find competitor
-        result = find_competitor(args.source_url, api_key)
+        result = find_competitor(args.source_url, api_key, verbose=args.verbose)
         
         # Convert to JSON
         json_output = result.model_dump_json(indent=2)
@@ -204,4 +316,3 @@ Environment Variables:
 
 if __name__ == "__main__":
     main()
-
