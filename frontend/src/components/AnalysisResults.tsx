@@ -5,7 +5,7 @@ import {
   Trophy, TrendingUp, TrendingDown, Minus, 
   ChevronDown, ChevronUp, ExternalLink,
   AlertTriangle, AlertCircle, Info, CheckCircle2,
-  Type, FileText, Image, DollarSign, Star, Search, MousePointerClick,
+  Type, FileText, Image, DollarSign, Search, MousePointerClick,
   Target, Lightbulb
 } from "lucide-react";
 import { clsx } from "clsx";
@@ -30,7 +30,6 @@ const dimensionIcons: Record<string, typeof Type> = {
   description: FileText,
   images: Image,
   pricing: DollarSign,
-  reviews: Star,
   seo: Search,
   cta: MousePointerClick,
 };
@@ -100,7 +99,6 @@ export function AnalysisResults({ report, competitorDiscovery }: AnalysisResults
     report.comparison.description_comparison,
     report.comparison.images_comparison,
     report.comparison.pricing_comparison,
-    report.comparison.reviews_comparison,
     report.comparison.seo_comparison,
     report.comparison.cta_comparison,
   ];
@@ -263,7 +261,7 @@ export function AnalysisResults({ report, competitorDiscovery }: AnalysisResults
                 </div>
               )}
               <p className="text-sm text-cream-100/50 mt-2">
-                {sourceWins} wins • {referenceWins} losses • {7 - sourceWins - referenceWins} ties
+                {sourceWins} wins • {referenceWins} losses • {6 - sourceWins - referenceWins} ties
               </p>
             </div>
           </div>

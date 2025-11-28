@@ -63,16 +63,6 @@ export interface PricingAnalysis {
   observations: string[];
 }
 
-export interface ReviewsAnalysis {
-  average_rating: number | null;
-  review_count: number | null;
-  has_review_summary: boolean;
-  has_review_images: boolean;
-  has_seller_responses: boolean;
-  has_verified_purchase_badges: boolean;
-  social_proof_score: number;
-  observations: string[];
-}
 
 export interface SEOAnalysis {
   has_structured_data: boolean;
@@ -102,7 +92,6 @@ export interface PDPAnalysis {
   description: DescriptionAnalysis;
   images: ImageAnalysis;
   pricing: PricingAnalysis;
-  reviews: ReviewsAnalysis;
   seo: SEOAnalysis;
   cta: CTAAnalysis;
   overall_score: number;
@@ -123,7 +112,6 @@ export interface CompetitiveComparison {
   description_comparison: ComparisonDimension;
   images_comparison: ComparisonDimension;
   pricing_comparison: ComparisonDimension;
-  reviews_comparison: ComparisonDimension;
   seo_comparison: ComparisonDimension;
   cta_comparison: ComparisonDimension;
   overall_source_score: number;

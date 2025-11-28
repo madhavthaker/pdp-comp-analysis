@@ -82,18 +82,6 @@ class PricingAnalysis(BaseModel):
     observations: list[str] = Field(description="Key observations about pricing")
 
 
-class ReviewsAnalysis(BaseModel):
-    """Analysis of reviews and ratings."""
-    average_rating: Optional[float] = Field(description="Average star rating if visible")
-    review_count: Optional[int] = Field(description="Number of reviews if visible")
-    has_review_summary: bool = Field(description="Whether AI/automated review summary is present")
-    has_review_images: bool = Field(description="Whether customer review images are shown")
-    has_seller_responses: bool = Field(description="Whether seller responds to reviews")
-    has_verified_purchase_badges: bool = Field(description="Whether verified purchase indicators exist")
-    social_proof_score: int = Field(ge=1, le=10, description="Score 1-10 for overall social proof strength")
-    observations: list[str] = Field(description="Key observations about reviews")
-
-
 class SEOAnalysis(BaseModel):
     """Analysis of SEO elements."""
     has_structured_data: bool = Field(description="Whether schema.org or other structured data is likely present")
@@ -116,68 +104,66 @@ class CTAAnalysis(BaseModel):
 
 
 class PDPAnalysis(BaseModel):
-    """Complete analysis of a single PDP."""
-    url: str = Field(description="The URL that was analyzed")
-    product_name: str = Field(description="The name/title of the product")
-    brand: Optional[str] = Field(description="Brand name if identifiable")
-    category: Optional[str] = Field(description="Product category if identifiable")
+    """Complete analysis of a single PDP. All fields must describe THIS URL only."""
+    url: str = Field(description="The exact URL that was analyzed - copy from the prompt")
+    product_name: str = Field(description="Product name found on THIS page")
+    brand: Optional[str] = Field(description="Brand name found on THIS page")
+    category: Optional[str] = Field(description="Product category on THIS page")
     title: TitleAnalysis
     description: DescriptionAnalysis
     images: ImageAnalysis
     pricing: PricingAnalysis
-    reviews: ReviewsAnalysis
     seo: SEOAnalysis
     cta: CTAAnalysis
-    overall_score: int = Field(ge=1, le=100, description="Overall PDP quality score out of 100")
-    strengths: list[str] = Field(description="Top 3-5 strengths of this PDP")
-    weaknesses: list[str] = Field(description="Top 3-5 weaknesses of this PDP")
+    overall_score: int = Field(ge=1, le=100, description="Overall quality score for THIS page out of 100")
+    strengths: list[str] = Field(description="Top 3-5 strengths observed on THIS page")
+    weaknesses: list[str] = Field(description="Top 3-5 weaknesses observed on THIS page")
 
 
 class ComparisonDimension(BaseModel):
     """Comparison scores for a single dimension."""
     dimension: str = Field(description="Name of the dimension being compared")
-    source_score: int = Field(ge=1, le=10, description="Score for the source PDP")
-    reference_score: int = Field(ge=1, le=10, description="Score for the reference PDP")
+    source_score: int = Field(ge=1, le=10, description="Score for SOURCE (the user's page URL)")
+    reference_score: int = Field(ge=1, le=10, description="Score for REFERENCE (the competitor URL)")
     winner: str = Field(description="'source', 'reference', or 'tie'")
-    gap_analysis: str = Field(description="Brief explanation of the gap between the two")
+    gap_analysis: str = Field(description="Explain the gap: '[REFERENCE brand] does X; [SOURCE brand] could improve by...' - be explicit about which brand you're describing")
 
 
 class CompetitiveComparison(BaseModel):
-    """Side-by-side comparison of both PDPs."""
+    """Side-by-side comparison of both PDPs. SOURCE = user's page, REFERENCE = competitor."""
     title_comparison: ComparisonDimension
     description_comparison: ComparisonDimension
     images_comparison: ComparisonDimension
     pricing_comparison: ComparisonDimension
-    reviews_comparison: ComparisonDimension
     seo_comparison: ComparisonDimension
     cta_comparison: ComparisonDimension
-    overall_source_score: int = Field(ge=1, le=100, description="Overall score for source PDP")
-    overall_reference_score: int = Field(ge=1, le=100, description="Overall score for reference PDP")
-    competitive_position: str = Field(description="Summary of where source stands vs reference")
+    overall_source_score: int = Field(ge=1, le=100, description="Overall score for SOURCE PDP (user's page)")
+    overall_reference_score: int = Field(ge=1, le=100, description="Overall score for REFERENCE PDP (competitor)")
+    competitive_position: str = Field(description="Summary of where SOURCE (user) stands vs REFERENCE (competitor)")
 
 
 class ImprovementRecommendation(BaseModel):
-    """A specific improvement recommendation."""
+    """A specific improvement recommendation for the SOURCE (user's) PDP."""
     priority: Priority = Field(description="Priority level of this recommendation")
-    dimension: str = Field(description="Which aspect this relates to (title, description, images, etc.)")
-    recommendation: str = Field(description="The specific recommendation")
-    rationale: str = Field(description="Why this improvement matters")
+    dimension: str = Field(description="Which aspect this relates to (title, description, images, pricing, seo, cta)")
+    recommendation: str = Field(description="The specific recommendation for SOURCE (user's page)")
+    rationale: str = Field(description="Why this improvement matters for SOURCE")
     implementation_effort: str = Field(description="Low/Medium/High effort to implement")
     expected_impact: str = Field(description="Low/Medium/High expected impact on conversions")
-    example_from_reference: Optional[str] = Field(description="Specific example from reference PDP to emulate")
+    example_from_reference: Optional[str] = Field(description="Specific example from the REFERENCE PDP URL provided in the prompt - do NOT cite category pages, homepages, or any other URLs")
 
 
 class AnalysisReport(BaseModel):
-    """The complete competitive analysis report."""
+    """The complete competitive analysis report. SOURCE = user's page to improve, REFERENCE = competitor benchmark."""
     analysis_timestamp: str = Field(description="ISO timestamp of when analysis was performed")
-    source_pdp: PDPAnalysis = Field(description="Analysis of the source PDP")
-    reference_pdp: PDPAnalysis = Field(description="Analysis of the reference PDP")
-    comparison: CompetitiveComparison = Field(description="Side-by-side comparison")
+    source_pdp: PDPAnalysis = Field(description="Analysis of SOURCE URL only - all observations must come from visiting the SOURCE URL")
+    reference_pdp: PDPAnalysis = Field(description="Analysis of REFERENCE URL only - all observations must come from visiting the REFERENCE URL")
+    comparison: CompetitiveComparison = Field(description="Compare SOURCE vs REFERENCE - source_score describes SOURCE, reference_score describes REFERENCE")
     recommendations: list[ImprovementRecommendation] = Field(
-        description="Prioritized list of improvement recommendations for the source PDP"
+        description="How to improve SOURCE based on what REFERENCE does better"
     )
     executive_summary: str = Field(
-        description="2-3 paragraph executive summary of the competitive analysis and key actions"
+        description="Summary naming both brands: how [SOURCE brand] compares to [REFERENCE brand] and what [SOURCE brand] should do"
     )
 
 
@@ -235,7 +221,7 @@ def analyze_pdps(source_url: str, reference_url: str, api_key: Optional[str] = N
         messages=[
             {
                 "role": "system",
-                "content": "You are an expert e-commerce analyst specializing in PDP optimization and competitive analysis. Always provide thorough, actionable insights."
+                "content": "You are an expert e-commerce PDP analyst. CRITICAL: You will analyze two URLs. Keep them separate - SOURCE is the user's page to improve, REFERENCE is the competitor to learn from. Never mix up which observations belong to which URL. When filling source_pdp, only include what you saw on the SOURCE URL. When filling reference_pdp, only include what you saw on the REFERENCE URL."
             },
             {
                 "role": "user",
