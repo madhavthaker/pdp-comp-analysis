@@ -1,11 +1,24 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "PDP Competitive Analysis",
-  description: "Compare Product Detail Pages for competitive insights using AI",
+  title: "PDP Analyzer – Competitive Intelligence for Product Pages",
+  description: "Discover how your product pages stack up against the best. AI-powered competitive analysis that reveals actionable insights.",
 };
 
 export default function RootLayout({
@@ -14,11 +27,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="antialiased min-h-screen">
+    <html lang="en" className={`${fraunces.variable} ${jakarta.variable}`}>
+      <body className="font-sans antialiased min-h-screen bg-canvas-100">
+        {/* Subtle noise texture */}
+        <div className="noise-overlay" aria-hidden="true" />
         {children}
       </body>
     </html>
   );
 }
-

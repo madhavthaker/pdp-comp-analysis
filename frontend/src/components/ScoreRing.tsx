@@ -5,62 +5,70 @@ import { clsx } from "clsx";
 interface ScoreRingProps {
   score: number;
   size?: number;
-  color?: "ember" | "electric" | "success" | "warning" | "danger";
+  color?: "coral" | "teal" | "forest" | "honey" | "rose";
+  showLabel?: boolean;
 }
 
 const colorMap = {
-  ember: {
-    stroke: "#FB923C",
-    glow: "rgba(251, 146, 60, 0.3)",
+  coral: {
+    stroke: "#E94560",
+    glow: "rgba(233, 69, 96, 0.25)",
+    bg: "rgba(233, 69, 96, 0.08)",
   },
-  electric: {
-    stroke: "#38BDF8",
-    glow: "rgba(56, 189, 248, 0.3)",
+  teal: {
+    stroke: "#0F4C5C",
+    glow: "rgba(15, 76, 92, 0.25)",
+    bg: "rgba(15, 76, 92, 0.08)",
   },
-  success: {
-    stroke: "#4ADE80",
-    glow: "rgba(74, 222, 128, 0.3)",
+  forest: {
+    stroke: "#2D6A4F",
+    glow: "rgba(45, 106, 79, 0.25)",
+    bg: "rgba(45, 106, 79, 0.08)",
   },
-  warning: {
-    stroke: "#FACC15",
-    glow: "rgba(250, 204, 21, 0.3)",
+  honey: {
+    stroke: "#D97706",
+    glow: "rgba(217, 119, 6, 0.25)",
+    bg: "rgba(217, 119, 6, 0.08)",
   },
-  danger: {
-    stroke: "#F87171",
-    glow: "rgba(248, 113, 113, 0.3)",
+  rose: {
+    stroke: "#E11D48",
+    glow: "rgba(225, 29, 72, 0.25)",
+    bg: "rgba(225, 29, 72, 0.08)",
   },
 };
 
-export function ScoreRing({ score, size = 120, color = "ember" }: ScoreRingProps) {
-  const strokeWidth = 8;
+export function ScoreRing({ score, size = 140, color = "coral", showLabel = true }: ScoreRingProps) {
+  const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
   const colors = colorMap[color];
 
-  // Determine score quality for text color
-  const getScoreColor = () => {
-    if (score >= 80) return "text-success-400";
-    if (score >= 60) return "text-warning-400";
-    if (score >= 40) return "text-ember-400";
-    return "text-danger-400";
+  // Determine score quality for text styling
+  const getScoreStyle = () => {
+    if (score >= 80) return { text: "text-forest-600", label: "Excellent" };
+    if (score >= 60) return { text: "text-honey-500", label: "Good" };
+    if (score >= 40) return { text: "text-coral-600", label: "Fair" };
+    return { text: "text-rose-500", label: "Needs Work" };
   };
 
+  const scoreStyle = getScoreStyle();
+
   return (
-    <div className="relative inline-flex items-center justify-center">
+    <div className="relative inline-flex flex-col items-center justify-center">
       <svg
         width={size}
         height={size}
         className="transform -rotate-90"
-        style={{ filter: `drop-shadow(0 0 8px ${colors.glow})` }}
+        style={{ filter: `drop-shadow(0 4px 16px ${colors.glow})` }}
       >
         {/* Background circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          fill="none"
-          stroke="rgba(255, 255, 255, 0.1)"
+          fill={colors.bg}
+          stroke="rgba(228, 226, 221, 0.5)"
           strokeWidth={strokeWidth}
         />
         {/* Progress circle */}
@@ -78,14 +86,21 @@ export function ScoreRing({ score, size = 120, color = "ember" }: ScoreRingProps
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={clsx("text-4xl font-bold", getScoreColor())}>
+        <span className={clsx("font-display text-4xl font-bold", scoreStyle.text)}>
           {score}
         </span>
-        <span className="text-xs text-cream-100/40 uppercase tracking-wide">
+        <span className="text-xs font-medium text-ink-50 uppercase tracking-wide">
           / 100
         </span>
       </div>
+      {showLabel && (
+        <span className={clsx(
+          "mt-3 text-sm font-semibold uppercase tracking-wide",
+          scoreStyle.text
+        )}>
+          {scoreStyle.label}
+        </span>
+      )}
     </div>
   );
 }
-
