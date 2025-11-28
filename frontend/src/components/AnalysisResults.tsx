@@ -200,13 +200,6 @@ export function AnalysisResults({
                 <p className="text-coral-600 font-medium text-sm mb-4">
                   {competitorDiscovery.source_brand}
                 </p>
-                {competitorDiscovery.source_price && (
-                  <div className="flex items-baseline gap-2 mb-5">
-                    <span className="font-display text-3xl font-bold text-ink-400">
-                      {competitorDiscovery.source_price}
-                    </span>
-                  </div>
-                )}
                 <div className="pt-4 border-t border-canvas-300">
                   <span className="badge-neutral">
                     {competitorDiscovery.source_category}
